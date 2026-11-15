@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101326"><link rel="manifest" href="/manifest.webmanifest">
+<title>VEOX AI Studio</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d19;--card:#171b2e;--line:#303653;--muted:#aab1ca;--purple:#8878ff;--mint:#39d8c5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 90% 0,#30245a,transparent 35%),var(--bg);color:#f7f7ff;font:15px system-ui,sans-serif}
+main{max-width:760px;margin:auto;padding:20px 15px 50px}.head{display:flex;justify-content:space-between;align-items:center;margin:5px 0 28px}.logo{font-size:23px;font-weight:900;letter-spacing:1px}.logo b{color:var(--mint)}.tag{font-size:11px;border:1px solid #625b9c;padding:5px 9px;border-radius:20px;color:#d6d0ff}
+h1{font-size:clamp(32px,8vw,48px);line-height:1.08;margin:0 0 9px}p.sub{color:var(--muted);margin:0 0 24px}
+.card{background:linear-gradient(145deg,#1b2037,#121628);border:1px solid var(--line);border-radius:19px;padding:17px;margin:15px 0}
+.tabs,.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.tabs{margin-bottom:18px}
+button,select,textarea{font:inherit}button{border:0;border-radius:12px;padding:13px;font-weight:800;cursor:pointer}.tab{background:#252b46;color:#b8bfd6;border:1px solid var(--line)}.tab.active{background:#393365;color:white;border-color:var(--purple)}
+label{display:block;font-weight:750;margin:0 0 8px}textarea,select,input[type=file]{width:100%;background:#0e1222;color:white;border:1px solid var(--line);border-radius:12px;padding:12px}textarea{min-height:112px;resize:vertical}
+.grid{margin-top:14px}.field{min-width:0}.field select{min-height:45px}.upload{display:none;margin-top:14px;padding:13px;border:1px dashed #71799b;border-radius:13px;color:var(--muted)}#preview{display:none;max-width:100%;max-height:190px;margin:12px auto 0;border-radius:10px}
+.primary{width:100%;margin-top:17px;color:white;background:linear-gradient(100deg,var(--purple),#559cff);font-size:16px}.primary:disabled{opacity:.55;cursor:wait}
+.small{font-size:12px;color:var(--muted);line-height:1.55}.result{min-height:130px;border:1px dashed #414a70;border-radius:13px;padding:14px;color:var(--muted);overflow-wrap:anywhere}.result video{width:100%;border-radius:12px;margin-top:10px}.result a{color:#a9fff0}.notice{display:none;padding:11px;border-radius:11px;background:#163b38;color:#c0fff3;margin-top:12px}.err{background:#49252d;color:#ffd5dc}.cost{color:#b8f6e9;font-size:12px;margin-top:10px}
+@media(max-width:500px){.grid{grid-template-columns:1fr}.card{padding:14px}}
+</style></head>
+<body><main>
+<header class="head"><div class="logo">VEOX <b>AI</b></div><div class="tag">VIDEO STUDIO · BETA</div></header>
+<h1>Your idea.<br>Your video.</h1><p class="sub">Create AI video concepts from a prompt or animate a photo.</p>
+<section class="card">
+<div class="tabs"><button class="tab active" id="textTab">✍️ Text to Video</button><button class="tab" id="photoTab">🖼️ Photo to Video</button></div>
+<label for="prompt">Describe what should happen</label><textarea id="prompt" maxlength="1800" placeholder="A cinematic camera move around a red sports car on a mountain road at golden hour..."></textarea>
+<div class="upload" id="uploadBox"><label for="photo">Choose a photo (JPG, PNG, WEBP)</label><input id="photo" type="file" accept="image/jpeg,image/png,image/webp"><img id="preview" alt="Selected photo preview"></div>
+<div class="grid">
+<div class="field"><label for="style">Look</label><select id="style"><option>Realistic</option><option>Cinematic</option><option>Product advertisement</option><option>Social media reel</option></select></div>
+<div class="field"><label for="ratio">Format</label><select id="ratio"><option value="9:16">9:16 · Reels</option><option value="16:9">16:9 · YouTube</option><option value="1:1">1:1 · Square</option></select></div>
+<div class="field"><label for="resolution">Resolution</label><select id="resolution"><option value="720p">720p · lower cost</option><option value="1080p">1080p · sharper</option><option value="4k">4K · premium</option></select></div>
+<div class="field"><label for="audio">Sound</label><select id="audio"><option value="true">Generate audio</option><option value="false">No audio</option></select></div>
+</div>
+<button class="primary" id="generate">✨ Generate AI video</button>
+<div class="cost">AI generation is paid per use by the provider. Review the estimate/provider billing before generating.</div>
+<div class="notice" id="notice" role="status"></div>
+<p class="small">Your prompt and optional photo are sent to the configured AI video provider for generation. Do not upload private or sensitive images.</p>
+</section>
+<section class="card"><label>Your generated video</label><div class="result" id="result">Your finished video will appear here. Generation can take a few minutes.</div></section>
+<p class="small">VEOX AI is an independent project interface. AI generation requires the server and provider API key to be configured by the owner.</p>
+</main>
+<script>
+let mode="text";const $=id=>document.getElementById(id);
+function setMode(m){mode=m;$("textTab").classList.toggle("active",m==="text");$("photoTab").classList.toggle("active",m==="photo");$("uploadBox").style.display=m==="photo"?"block":"none";}
+$("textTab").onclick=()=>setMode("text");$("photoTab").onclick=()=>setMode("photo");
+$("photo").onchange=e=>{let f=e.target.files[0];if(f){$("preview").src=URL.createObjectURL(f);$("preview").style.display="block";}};
+$("generate").onclick=async()=>{
+ const prompt=$("prompt").value.trim(),photo=$("photo").files[0];
+ if(!prompt){alert("Please describe your video.");return;}if(mode==="photo"&&!photo){alert("Please select a photo.");return;}
+ const btn=$("generate"),notice=$("notice"),result=$("result");btn.disabled=true;btn.textContent="⏳ Generating...";notice.style.display="block";notice.className="notice";notice.textContent="Sending your request securely. Please keep this page open.";
+ result.textContent="Generation in progress…";
+ try{
+  const fd=new FormData();fd.append("prompt",prompt);fd.append("mode",mode);fd.append("style",$("style").value);fd.append("aspect_ratio",$("ratio").value);fd.append("resolution",$("resolution").value);fd.append("generate_audio",$("audio").value);if(photo)fd.append("image",photo);
+  const r=await fetch("/api/generate",{method:"POST",body:fd});const data=await r.json();if(!r.ok)throw new Error(data.error||"Generation failed");
+  result.innerHTML="";const title=document.createElement("strong");title.textContent="Your video is ready ✓";result.appendChild(title);
+  const v=document.createElement("video");v.controls=true;v.playsInline=true;v.src=data.videoUrl;result.appendChild(v);
+  const a=document.createElement("a");a.href=data.videoUrl;a.target="_blank";a.rel="noopener";a.download="veox-ai-video.mp4";a.textContent="Open / download video";result.appendChild(document.createElement("br"));result.appendChild(a);
+  notice.textContent="Done! Your video has been generated.";
+ }catch(e){notice.className="notice err";notice.textContent=e.message;result.textContent="No video generated. Check server setup, API key and provider credits.";}
+ finally{btn.disabled=false;btn.textContent="✨ Generate AI video";}
+};
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+</script></body></html>

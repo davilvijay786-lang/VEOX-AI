@@ -1,0 +1,9 @@
+{
+  "name": "VEOX AI Video Studio",
+  "short_name": "VEOX AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d19",
+  "theme_color": "#101326",
+  "description": "Create AI videos from text and photos."
+}
